@@ -147,7 +147,7 @@ void resolveInParallel(int numOfThreads, std::vector<std::string> *randomStrings
     printDuration(startTime, endTime, "resolveParallel");
 }
 
-// argv[1]: num of threads
+// argv[1]: num of threads. no use multi-threading if 0
 // argv[2]: file path of random strings
 int main(int argc, char** argv) {
     int numOfThreads = 1;
@@ -164,12 +164,15 @@ int main(int argc, char** argv) {
     std::vector<std::string> randomStrings = getRandomStrings(filePath);
     std::cout << "numOfStrings: " + std::to_string(randomStrings.size()) << std::endl;
 
-    insert(&randomStrings);
-    insertInParallel(numOfThreads, &randomStrings);
-    lookup(&randomStrings);
-    lookupInParallel(numOfThreads, &randomStrings);
-    resolve(&randomStrings);
-    resolveInParallel(numOfThreads, &randomStrings);
+    if(numOfThreads > 1) {
+        insertInParallel(numOfThreads, &randomStrings);
+        lookupInParallel(numOfThreads, &randomStrings);
+        resolveInParallel(numOfThreads, &randomStrings);
+    } else {
+        insert(&randomStrings);
+        lookup(&randomStrings);
+        resolve(&randomStrings);
+    }
 }
 
 void printDuration(std::chrono::system_clock::time_point startTime,
