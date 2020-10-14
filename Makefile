@@ -32,8 +32,8 @@ parallel-symbol:
 
 performance-symbol:
 	@echo "\n********** Test Performance Symbol Table **********"
-	@$(CC) $(CXXFLAGS) $(PARALLELFLAGS) $(INCLUDES) -o $(TARGET) $(TEST_DIR)/symbol_table_performance_test.cpp 
-	@./$(TARGET)
+	@$(CC) $(CXXFLAGS) $(PARALLELFLAGS) $(INCLUDES) -o $(TARGET) $(TEST_DIR)/symbol_table_performance_test.cpp
+	@./$(TARGET) $(NUM_OF_THREADS)
 
 clean:
 	rm -f $(TARGET)
