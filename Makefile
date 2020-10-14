@@ -11,6 +11,8 @@ INCLUDES = -Isrc/include/ -I./
 
 TARGET = run_test
 
+NUM_OF_THREADS = 1
+
 all: check clean
 
 check: symbol record clean
@@ -33,7 +35,7 @@ parallel-symbol:
 performance-symbol:
 	@echo "\n********** Test Performance Symbol Table **********"
 	@$(CC) $(CXXFLAGS) $(PARALLELFLAGS) $(INCLUDES) -o $(TARGET) $(TEST_DIR)/symbol_table_performance_test.cpp
-	@./$(TARGET) $(NUM_OF_THREADS)
+	@./$(TARGET) $(NUM_OF_THREADS) $(FILE_PATH)
 
 clean:
 	rm -f $(TARGET)

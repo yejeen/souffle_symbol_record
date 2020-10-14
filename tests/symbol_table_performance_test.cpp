@@ -20,10 +20,9 @@ void printDuration(std::chrono::system_clock::time_point startTime,
                    std::chrono::system_clock::time_point endTime,
                    std::string title);
 
-std::vector<std::string> getRandomStrings(){
+std::vector<std::string> getRandomStrings(std::string filePath){
     int minStringLength = 6;
     int maxStringLength = 20;
-    std::string filePath = "randomStrings.txt";
 
     srand((unsigned int)time(NULL));
 
@@ -148,14 +147,21 @@ void resolveInParallel(int numOfThreads, std::vector<std::string> *randomStrings
     printDuration(startTime, endTime, "resolveParallel");
 }
 
+// argv[1]: num of threads
+// argv[2]: file path of random strings
 int main(int argc, char** argv) {
     int numOfThreads = 1;
-    if (argc > 1) {
+    std::string filePath = "randomstr.txt";
+
+    if(argc > 1) {
         numOfThreads = std::stoi(argv[1]);
     }
     std::cout << "numOfThreads: " + std::to_string(numOfThreads) << std::endl;
 
-    std::vector<std::string> randomStrings = getRandomStrings();
+    if(argc > 2) {
+        filePath = argv[2];
+    }
+    std::vector<std::string> randomStrings = getRandomStrings(filePath);
     std::cout << "numOfStrings: " + std::to_string(randomStrings.size()) << std::endl;
 
     insert(&randomStrings);
