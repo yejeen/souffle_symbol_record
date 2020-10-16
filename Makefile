@@ -11,7 +11,11 @@ INCLUDES = -Isrc/include/ -I./
 
 TARGET = run_test
 
-NUM_OF_THREADS = 1
+NUM_OF_THREADS = 0
+
+NUM_OF_ENTRIES = 10000
+
+NUM_OF_RECORDS = 100000
 
 all: check clean
 
@@ -36,6 +40,11 @@ performance-symbol:
 	@echo "\n********** Test Performance Symbol Table **********"
 	@$(CC) $(CXXFLAGS) $(PARALLELFLAGS) $(INCLUDES) -o $(TARGET) $(TEST_DIR)/symbol_table_performance_test.cpp
 	@./$(TARGET) $(NUM_OF_THREADS) $(FILE_PATH)
+
+performance-record:
+	@echo "\n********** Test Performance Record Table **********"
+	@$(CC) $(CXXFLAGS) $(PARALLELFLAGS) $(INCLUDES) -o $(TARGET) $(TEST_DIR)/record_table_performance_test.cpp
+	@./$(TARGET) $(NUM_OF_THREADS) $(NUM_OF_ENTRIES) $(NUM_OF_RECORDS) $(RECORD_LENGTH)
 
 clean:
 	rm -f $(TARGET)
