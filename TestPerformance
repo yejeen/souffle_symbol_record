@@ -3,7 +3,6 @@
 MAX_NUM_OF_THREAD=10
 FILE_PATH=randomStrings.txt
 temp_filename=symbol_result.tmp
-result_filename=symbol_result.txt
 
 rm -rf $temp_filename
 
@@ -23,7 +22,7 @@ done
 
 n=1
 row=""
-echo -e "# of threads\t insert\t\t lookup\t\t resolve" > $result_filename
+echo -e "# of threads\t insert\t\t lookup\t\t resolve"
 while read line; do
 	function=$(echo $line | cut -d':' -f1)
 	if [ "$function" = "insert" ] || [ "$function" = "insertParallel" ]; then
@@ -35,7 +34,7 @@ while read line; do
 	fi
 	if [ "$function" = "resolve" ] || [ "$function" = "resolveParallel" ]; then
 		row+=$(echo $line | cut -d':' -f2)
-		echo -e $row >> $result_filename
+		echo -e $row
 		row=""
 		n=$((n+1))
 	fi
