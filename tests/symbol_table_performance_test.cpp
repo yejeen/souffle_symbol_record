@@ -151,7 +151,7 @@ void resolveInParallel(int numOfThreads, std::vector<std::string> *randomStrings
 // argv[2]: file path of random strings
 int main(int argc, char** argv) {
     int numOfThreads = 1;
-    std::string filePath = "randomstr.txt";
+    std::string filePath = "randomStrings.txt";
 
     if(argc > 1) {
         numOfThreads = std::stoi(argv[1]);
