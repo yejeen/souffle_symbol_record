@@ -1,0 +1,44 @@
+#!/bin/bash
+
+MAX_NUM_OF_THREAD=10
+FILE_PATH=randomStrings.txt
+temp_filename=symbol_result.tmp
+result_filename=symbol_result.txt
+
+rm -rf $temp_filename
+
+if [ "$1" != "" ]; then MAX_NUM_OF_TESTS=$1
+fi
+
+if [ "$2" != "" ]; then FILE_PATH=$2
+fi
+
+if [ "$3" != "" ]; then make performance-symbol NUM_OF_THREADS=0 FILE_PATH=$FILE_PATH CC="$3" >> $temp_filename
+else make performance-symbol NUM_OF_THREADS=0 FILE_PATH=$FILE_PATH >> $temp_filename
+fi
+
+for index in $(seq 2 $MAX_NUM_OF_TESTS) ; do
+	./run_test $index $FILE_PATH >> $temp_filename
+done
+
+n=1
+row=""
+echo -e "# of threads\t insert\t\t lookup\t\t resolve" > $result_filename
+while read line; do
+	function=$(echo $line | cut -d':' -f1)
+	if [ "$function" = "insert" ] || [ "$function" = "insertParallel" ]; then
+	  row+="$n\t\t"
+		row+=$(echo $line | cut -d':' -f2)"\t"
+	fi
+	if [ "$function" = "lookup" ] || [ "$function" = "lookupParallel" ]; then
+		row+=$(echo $line | cut -d':' -f2)"\t"
+	fi
+	if [ "$function" = "resolve" ] || [ "$function" = "resolveParallel" ]; then
+		row+=$(echo $line | cut -d':' -f2)
+		echo -e $row >> $result_filename
+		row=""
+		n=$((n+1))
+	fi
+done < $temp_filename
+
+rm -rf $temp_filename
