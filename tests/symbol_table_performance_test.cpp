@@ -66,7 +66,7 @@ void insertInParallel(int numOfThreads, std::vector<std::string> *randomStrings)
     }
     //end
     std::chrono::system_clock::time_point endTime = std::chrono::system_clock::now();
-    printDuration(startTime, endTime, "parallelInsert");
+    printDuration(startTime, endTime, "insertParallel");
 }
 
 void lookup(std::vector<std::string> *randomStrings) {
