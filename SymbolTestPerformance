@@ -12,8 +12,8 @@ fi
 if [ "$2" != "" ]; then FILE_PATH=$2
 fi
 
-if [ "$3" != "" ]; then make performance-symbol NUM_OF_THREADS=0 FILE_PATH=$FILE_PATH CC="$3" >> $temp_filename
-else make performance-symbol NUM_OF_THREADS=0 FILE_PATH=$FILE_PATH >> $temp_filename
+if [ "$3" != "" ]; then make performance-symbol NUM_OF_THREADS=0 FILE_PATH=$FILE_PATH CC="$3" > $temp_filename
+else make performance-symbol NUM_OF_THREADS=0 FILE_PATH=$FILE_PATH > $temp_filename
 fi
 
 for index in $(seq 2 $MAX_NUM_OF_TESTS) ; do
