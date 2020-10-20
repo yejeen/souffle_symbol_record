@@ -1,0 +1,50 @@
+#!/bin/bash
+
+MAX_NUM_OF_THREADS=10
+NUM_OF_ENTRIES=10000
+NUM_OF_RECORDS=1000
+RECORD_LENGTH=10
+temp_filename=record_result.tmp
+
+rm -rf $temp_filename
+
+if [ "$5" != "" ]; then make performance-record NUM_OF_THREADS=1 NUM_OF_ENTRIES=$NUM_OF_ENTRIES NUM_OF_RECORDS=$NUM_OF_RECORDS RECORD_LENGTH=$RECORD_LENGTH CC="$5" > $temp_filename
+else
+    if [ "$1" != "" ]; then MAX_NUM_OF_THREADS=$1
+    fi
+    if [ "$2" != "" ]; then NUM_OF_ENTRIES=$2
+    fi
+    if [ "$3" != "" ]; then NUM_OF_RECORDS=$3
+    fi
+    if [ "$4" != "" ]; then RECORD_LENGTH=$4
+    fi
+    make performance-record NUM_OF_THREADS=1 NUM_OF_ENTRIES=$NUM_OF_ENTRIES NUM_OF_RECORDS=$NUM_OF_RECORDS RECORD_LENGTH=$RECORD_LENGTH > $temp_filename
+fi
+
+for index in $(seq 2 $MAX_NUM_OF_THREADS) ; do
+	./run_test $index $NUM_OF_ENTRIES $NUM_OF_RECORDS $RECORD_LENGTH >> $temp_filename
+done
+
+echo "MAX_NUM_OF_THREADS: "$MAX_NUM_OF_THREADS
+echo "NUM_OF_ENTRIES: "$NUM_OF_ENTRIES
+echo "NUM_OF_RECORDS: "$NUM_OF_RECORDS
+echo "RECORDS_LENGTH: "$RECORD_LENGTH
+
+n=1
+row=""
+echo -e "# of threads\t pack\t\t unpack"
+while read line; do
+	function=$(echo $line | cut -d':' -f1)
+	if [ "$function" = "pack" ]; then
+	  row+="$n\t\t"
+		row+=$(echo $line | cut -d':' -f2)"\t"
+	fi
+	if [ "$function" = "unpack" ]; then
+		row+=$(echo $line | cut -d':' -f2)
+		echo -e $row
+		row=""
+		n=$((n+1))
+	fi
+done < $temp_filename
+
+rm -rf $temp_filename
