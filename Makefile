@@ -11,7 +11,7 @@ INCLUDES = -Isrc/include/ -I./
 
 TARGET = run_test
 
-NUM_OF_THREADS = 0
+NUM_OF_THREADS = 1
 
 NUM_OF_ENTRIES = 10000
 

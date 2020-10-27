@@ -16,9 +16,7 @@
 #include <vector>
 #include <fstream>
 
-void printDuration(std::chrono::system_clock::time_point startTime,
-                   std::chrono::system_clock::time_point endTime,
-                   std::string title);
+void printDuration(int numOfThreads, double insertTime, double lookupTime, double resolveTime);
 
 std::vector<std::string> getRandomStrings(std::string filePath){
     int minStringLength = 6;
@@ -42,7 +40,7 @@ std::vector<std::string> getRandomStrings(std::string filePath){
     return randomStrings;
 }
 
-void insert(std::vector<std::string> *randomStrings) {
+double insert(std::vector<std::string> *randomStrings) {
 
     souffle::SymbolTable table;
     //start
@@ -52,10 +50,11 @@ void insert(std::vector<std::string> *randomStrings) {
     }
     //end
     std::chrono::system_clock::time_point endTime = std::chrono::system_clock::now();
-    printDuration(startTime, endTime, "insert");
+    std::chrono::duration<double> elapsed_seconds = endTime - startTime;
+    return elapsed_seconds.count();
 }
 
-void insertInParallel(int numOfThreads, std::vector<std::string> *randomStrings){
+double insertInParallel(int numOfThreads, std::vector<std::string> *randomStrings){
 
     souffle::SymbolTable table;
     //start
@@ -66,10 +65,11 @@ void insertInParallel(int numOfThreads, std::vector<std::string> *randomStrings)
     }
     //end
     std::chrono::system_clock::time_point endTime = std::chrono::system_clock::now();
-    printDuration(startTime, endTime, "insertParallel");
+    std::chrono::duration<double> elapsed_seconds = endTime - startTime;
+    return elapsed_seconds.count();
 }
 
-void lookup(std::vector<std::string> *randomStrings) {
+double lookup(std::vector<std::string> *randomStrings) {
 
     souffle::SymbolTable table;
     //input new strings
@@ -84,10 +84,11 @@ void lookup(std::vector<std::string> *randomStrings) {
     }
     //end
     std::chrono::system_clock::time_point endTime = std::chrono::system_clock::now();
-    printDuration(startTime, endTime, "lookup");
+    std::chrono::duration<double> elapsed_seconds = endTime - startTime;
+    return elapsed_seconds.count();
 }
 
-void lookupInParallel(int numOfThreads, std::vector<std::string> *randomStrings) {
+double lookupInParallel(int numOfThreads, std::vector<std::string> *randomStrings) {
 
     souffle::SymbolTable table;
     //input new strings
@@ -103,10 +104,11 @@ void lookupInParallel(int numOfThreads, std::vector<std::string> *randomStrings)
     }
     //end
     std::chrono::system_clock::time_point endTime = std::chrono::system_clock::now();
-    printDuration(startTime, endTime, "lookupParallel");
+    std::chrono::duration<double> elapsed_seconds = endTime - startTime;
+    return elapsed_seconds.count();
 }
 
-void resolve(std::vector<std::string> *randomStrings) {
+double resolve(std::vector<std::string> *randomStrings) {
 
     souffle::SymbolTable table;
     std::vector<size_t> indices;
@@ -123,10 +125,11 @@ void resolve(std::vector<std::string> *randomStrings) {
     }
     //end
     std::chrono::system_clock::time_point endTime = std::chrono::system_clock::now();
-    printDuration(startTime, endTime, "resolve");
+    std::chrono::duration<double> elapsed_seconds = endTime - startTime;
+    return elapsed_seconds.count();
 }
 
-void resolveInParallel(int numOfThreads, std::vector<std::string> *randomStrings) {
+double resolveInParallel(int numOfThreads, std::vector<std::string> *randomStrings) {
 
     souffle::SymbolTable table;
     std::vector<size_t> indices;
@@ -144,19 +147,24 @@ void resolveInParallel(int numOfThreads, std::vector<std::string> *randomStrings
     }
     //end
     std::chrono::system_clock::time_point endTime = std::chrono::system_clock::now();
-    printDuration(startTime, endTime, "resolveParallel");
+    std::chrono::duration<double> elapsed_seconds = endTime - startTime;
+    return elapsed_seconds.count();
 }
 
 // argv[1]: num of threads. no use multi-threading if 0
 // argv[2]: file path of random strings
 int main(int argc, char** argv) {
-    int numOfThreads = 1;
+    int maxNumOfThreads = 1;
     std::string filePath = "randomStrings.txt";
 
     if(argc > 1) {
-        numOfThreads = std::stoi(argv[1]);
+        maxNumOfThreads = std::stoi(argv[1]);
+        if (maxNumOfThreads == 0) {
+            std::cout << "invalid argument! numOfThreads = 0" << std::endl;
+            exit(0);
+        }
     }
-    std::cout << "numOfThreads: " + std::to_string(numOfThreads) << std::endl;
+    std::cout << "maxNumOfThreads: " + std::to_string(maxNumOfThreads) << std::endl;
 
     if(argc > 2) {
         filePath = argv[2];
@@ -164,20 +172,27 @@ int main(int argc, char** argv) {
     std::vector<std::string> randomStrings = getRandomStrings(filePath);
     std::cout << "numOfStrings: " + std::to_string(randomStrings.size()) << std::endl;
 
-    if(numOfThreads > 1) {
-        insertInParallel(numOfThreads, &randomStrings);
-        lookupInParallel(numOfThreads, &randomStrings);
-        resolveInParallel(numOfThreads, &randomStrings);
-    } else {
-        insert(&randomStrings);
-        lookup(&randomStrings);
-        resolve(&randomStrings);
+    std::cout << "# of threads\tinsert\t\tlookup\t\tresolve" << std::endl;
+    double insertTime;
+    double lookupTime;
+    double resolveTime;
+    for (int numOfThreads = 1; numOfThreads <= maxNumOfThreads; ++numOfThreads) {
+        if(numOfThreads > 1) {
+            insertTime = insertInParallel(numOfThreads, &randomStrings);
+            lookupTime = lookupInParallel(numOfThreads, &randomStrings);
+            resolveTime = resolveInParallel(numOfThreads, &randomStrings);
+        } else {
+            insertTime = insert(&randomStrings);
+            lookupTime = lookup(&randomStrings);
+            resolveTime = resolve(&randomStrings);
+        }
+        printDuration(numOfThreads, insertTime, lookupTime, resolveTime);
     }
 }
 
-void printDuration(std::chrono::system_clock::time_point startTime,
-                   std::chrono::system_clock::time_point endTime,
-                   std::string title) {
-    std::chrono::duration<double> elapsed_seconds = endTime - startTime;
-    std::cout << title + ": " + std::to_string(elapsed_seconds.count()) << " s\n";
+void printDuration(int numOfThreads, double insertTime, double lookupTime, double resolveTime) {
+    std::cout << numOfThreads << "\t\t"
+        << std::to_string(insertTime) << " s\t"
+        << std::to_string(lookupTime) << " s\t"
+        << std::to_string(resolveTime) << " s\n";
 }
