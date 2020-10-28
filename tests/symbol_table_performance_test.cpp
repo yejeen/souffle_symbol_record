@@ -161,7 +161,7 @@ int main(int argc, char** argv) {
         maxNumOfThreads = std::stoi(argv[1]);
         if (maxNumOfThreads == 0) {
             std::cout << "invalid argument! numOfThreads = 0" << std::endl;
-            exit(0);
+            exit(1);
         }
     }
     std::cout << "maxNumOfThreads: " + std::to_string(maxNumOfThreads) << std::endl;
