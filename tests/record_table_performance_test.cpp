@@ -12,6 +12,9 @@
 #include <cmath>
 #include <chrono>
 
+std::array<double,2> test(int numOfThreads, int numOfEntries, int numOfRecords,
+            std::vector<std::vector<souffle::RamDomain>> *records);
+
 // argv[1]: num of threads
 // argv[2]: num of entries
 // argv[3]: num of records
@@ -33,7 +36,8 @@ int main(int argc, char** argv) {
         case 2:
             numOfThreads = std::stoi(argv[1]);
             if(numOfThreads == 0) {
-                numOfThreads = 1;
+                std::cerr << "invalid argument! numOfThreads = 0" << std::endl;
+                exit(1);
             }
         default:
             break;
@@ -65,19 +69,30 @@ int main(int argc, char** argv) {
     std::cout << "numOfEntries: " << numOfEntries << std::endl;
     std::cout << "numOfRecords(arity): " << numOfRecords << std::endl;
     std::cout << "recordLength: " << recordLength << std::endl;
+    std::cout << "# of threads\tpack\t\tunpack\n";
 
+    std::array<double,2> durations;
+    for (int i = 1; i < numOfThreads; ++i) {
+        durations = test(numOfThreads, numOfEntries, numOfRecords, &records);
+        std::cout << i << "\t\t" << durations[0] << " s\t" << durations[1] << " s\n";
+    }
+}
+
+std::array<double,2> test(int numOfThreads, int numOfEntries, int numOfRecords,
+            std::vector<std::vector<souffle::RamDomain>> *records) {
     souffle::RecordTable recordTable;
     std::vector<souffle::RamDomain> references(numOfEntries);
+    std::array<double,2> durations;
 
     // start pack test
     std::chrono::system_clock::time_point startTime = std::chrono::system_clock::now();
 #pragma omp parallel for num_threads(numOfThreads)
     for (int i = 0; i < numOfEntries; i++) {
-        references[i] = recordTable.pack(records[i].data(), numOfRecords);
+        references[i] = recordTable.pack(records->at(i).data(), numOfRecords);
     }
     std::chrono::system_clock::time_point endTime = std::chrono::system_clock::now();
     std::chrono::duration<double> elapsed_seconds = endTime - startTime;
-    std::cout << "pack: " + std::to_string(elapsed_seconds.count()) << " s" << std::endl;
+    durations[0] = elapsed_seconds.count();
 
     // start unpack test
     startTime = std::chrono::system_clock::now();
@@ -87,5 +102,7 @@ int main(int argc, char** argv) {
     }
     endTime = std::chrono::system_clock::now();
     elapsed_seconds = endTime - startTime;
-    std::cout << "unpack: " + std::to_string(elapsed_seconds.count()) << " s" << std::endl;
+    durations[1] = elapsed_seconds.count();
+
+    return durations;
 }
