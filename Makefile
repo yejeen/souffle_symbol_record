@@ -17,6 +17,8 @@ NUM_OF_ENTRIES = 10000
 
 NUM_OF_RECORDS = 100000
 
+STRING_LENGTH = -1
+
 all: check clean
 
 check: symbol record clean
@@ -39,12 +41,12 @@ parallel-symbol:
 performance-symbol:
 	@echo "\n********** Test Performance Symbol Table **********"
 	@$(CC) $(CXXFLAGS) $(PARALLELFLAGS) $(INCLUDES) -o $(TARGET) $(TEST_DIR)/symbol_table_performance_test.cpp
-	@./$(TARGET) $(NUM_OF_THREADS) $(FILE_PATH)
+	@./$(TARGET) $(NUM_OF_THREADS) $(FILE_PATH) $(STRING_LENGTH)
 
 performance-record:
 	@echo "\n********** Test Performance Record Table **********"
 	@$(CC) $(CXXFLAGS) $(PARALLELFLAGS) $(INCLUDES) -o $(TARGET) $(TEST_DIR)/record_table_performance_test.cpp
-	@./$(TARGET) $(NUM_OF_THREADS) $(NUM_OF_ENTRIES) $(NUM_OF_RECORDS) $(RECORD_LENGTH)
+	@./$(TARGET) $(NUM_OF_THREADS) $(NUM_OF_ENTRIES) $(RECORD_LENGTH) $(NUM_OF_RECORDS)
 
 clean:
 	rm -f $(TARGET)

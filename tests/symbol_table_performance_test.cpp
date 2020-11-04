@@ -18,20 +18,22 @@
 
 void printDuration(int numOfThreads, double insertTime, double lookupTime, double resolveTime);
 
-std::vector<std::string> getRandomStrings(std::string filePath){
+std::vector<std::string> getRandomStrings(std::string filePath, int stringLength){
     int minStringLength = 6;
     int maxStringLength = 20;
 
     srand((unsigned int)time(NULL));
 
     std::ifstream openFile(filePath.data());
-
     std::vector<std::string> randomStrings;
 
     if(openFile.is_open()){
         std::string line;
         while(getline(openFile, line)){
-            int randomLength = rand() % (maxStringLength-1) + minStringLength;
+            int randomLength = stringLength;
+            if(stringLength == -1) {
+                randomLength = rand() % (maxStringLength-1) + minStringLength;
+            }
             line.resize(randomLength);
             randomStrings.push_back(line);
         }
@@ -152,10 +154,12 @@ double resolveInParallel(int numOfThreads, std::vector<std::string> *randomStrin
 }
 
 // argv[1]: num of threads. no use multi-threading if 0
-// argv[2]: file path of random strings
+// argv[2]: length of symbol string (6 <= length <= 20) if not exist or -1, length is random
+// argv[3]: file path of random strings
 int main(int argc, char** argv) {
     int maxNumOfThreads = 1;
     std::string filePath = "randomStrings.txt";
+    int stringLength = -1;
 
     if(argc > 1) {
         maxNumOfThreads = std::stoi(argv[1]);
@@ -167,10 +171,20 @@ int main(int argc, char** argv) {
     std::cout << "maxNumOfThreads: " + std::to_string(maxNumOfThreads) << std::endl;
 
     if(argc > 2) {
-        filePath = argv[2];
+        stringLength = std::stoi(argv[2]);
+        if ((stringLength != -1 && stringLength < 6) || stringLength > 20 ) {
+            std::cout << "invalid argument! stringLength == -1 or 6 <= stringLength <= 20 " << std::endl;
+            exit(1);
+        }
     }
-    std::vector<std::string> randomStrings = getRandomStrings(filePath);
+
+    if(argc > 3) {
+        filePath = argv[3];
+    }
+
+    std::vector<std::string> randomStrings = getRandomStrings(filePath, stringLength);
     std::cout << "numOfStrings: " + std::to_string(randomStrings.size()) << std::endl;
+
 
     std::cout << "# of threads\tinsert\t\tlookup\t\tresolve" << std::endl;
     double insertTime;
