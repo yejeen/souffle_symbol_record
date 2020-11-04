@@ -44,8 +44,8 @@ private:
     /** A lock to synchronize parallel accesses */
     mutable Lock access;
 
-    /** Map indices to strings. */
-    std::deque<std::string> numToStr;
+    /** Map indices to string pointers. */
+    std::vector<const std::string*> numToStr;
 
     /** Map strings to indices. */
     std::unordered_map<std::string, size_t> strToNum;
@@ -58,7 +58,8 @@ private:
         if (it == strToNum.end()) {
             index = numToStr.size();
             strToNum[symbol] = index;
-            numToStr.push_back(symbol);
+            it = strToNum.find(symbol);
+            numToStr.push_back(&it->first);
         } else {
             index = it->second;
         }
@@ -69,7 +70,8 @@ private:
     inline void newSymbol(const std::string& symbol) {
         if (strToNum.find(symbol) == strToNum.end()) {
             strToNum[symbol] = numToStr.size();
-            numToStr.push_back(symbol);
+            auto it = strToNum.find(symbol);
+            numToStr.push_back(&it->first);
         }
     }
 
@@ -78,7 +80,12 @@ public:
     SymbolTable() = default;
 
     /** Copy constructor, performs a deep copy. */
-    SymbolTable(const SymbolTable& other) : numToStr(other.numToStr), strToNum(other.strToNum) {}
+    SymbolTable(const SymbolTable& other) : strToNum(other.strToNum) {
+        for (size_t i = 0 ; i < other.numToStr.size(); i++) {
+            auto it = strToNum.find(*other.numToStr[i]);
+            numToStr.push_back(&it->first);
+        }
+    }
 
     /** Copy constructor for r-value reference. */
     SymbolTable(SymbolTable&& other) noexcept {
@@ -154,12 +161,12 @@ public:
                 // TODO: use different error reporting here!!
                 fatal("Error index out of bounds in call to `SymbolTable::resolve`. index = `%d`", index);
             }
-            return numToStr[pos];
+            return *numToStr[pos];
         }
     }
 
     const std::string& unsafeResolve(const RamDomain index) const {
-        return numToStr[static_cast<size_t>(index)];
+        return *numToStr[static_cast<size_t>(index)];
     }
 
     /* Return the size of the symbol table, being the number of symbols it currently holds. */
