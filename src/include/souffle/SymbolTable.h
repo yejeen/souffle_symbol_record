@@ -108,8 +108,11 @@ public:
         if (this == &other) {
             return *this;
         }
-        numToStr = other.numToStr;
         strToNum = other.strToNum;
+        for (size_t i = 0 ; i < other.numToStr.size(); i++) {
+            auto it = strToNum.find(*other.numToStr[i]);
+            numToStr.push_back(&it->first);
+        }
         return *this;
     }
 
