@@ -66,6 +66,51 @@ TEST(SymbolTable, Copy) {
     delete b;
 }
 
+TEST(SymbolTable, Copy2) {
+    std::vector<std::string> symbols = {"Hello", "Hi", "Greeting"};
+    auto* a = new SymbolTable();
+    for(int i = 0; i < symbols.size(); i++) {
+        a->insert(symbols[i]);
+    }
+
+    auto* b = new SymbolTable(*a);
+    auto* c = new SymbolTable(std::move(*a));
+
+    size_t a_idx[symbols.size()];
+    size_t b_idx[symbols.size()];
+    size_t c_idx[symbols.size()];
+    for(int i = 0; i < symbols.size(); i++) {
+        a_idx[i] = static_cast<size_t>(a->lookup(symbols[i]));
+        b_idx[i] = static_cast<size_t>(b->lookup(symbols[i]));
+        c_idx[i] = static_cast<size_t>(c->lookup(symbols[i]));
+    }
+
+    // hash should be the same
+    for(int i = 0; i < symbols.size(); i++) {
+        EXPECT_EQ(a_idx[i], b_idx[i]);
+        EXPECT_EQ(a_idx[i], c_idx[i]);
+    }
+
+    // should be the same actual string
+    for(int i = 0; i < symbols.size(); i++) {
+        EXPECT_STREQ(symbols[i], a->resolve(a_idx[i]));
+        EXPECT_STREQ(symbols[i], b->resolve(b_idx[i]));
+        EXPECT_STREQ(symbols[i], c->resolve(b_idx[i]));
+        EXPECT_STREQ(a->resolve(a_idx[i]), b->resolve(b_idx[i]));
+        EXPECT_STREQ(a->resolve(a_idx[i]), c->resolve(b_idx[i]));
+    }
+
+    // b and c should survive
+    delete a;
+    for(int i = 0; i < symbols.size(); i++) {
+        EXPECT_STREQ(symbols[i], b->resolve(b_idx[i]));
+        EXPECT_STREQ(symbols[i], c->resolve(c_idx[i]));
+    }
+
+    delete b;
+    delete c;
+}
+
 TEST(SymbolTable, Assign) {
     auto* a = new SymbolTable();
     a->insert("Hello");
