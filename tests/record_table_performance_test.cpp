@@ -72,7 +72,7 @@ int main(int argc, char** argv) {
     std::cout << "# of threads\tpack\t\tunpack\n";
 
     std::array<double,2> durations;
-    for (int i = 1; i < numOfThreads; ++i) {
+    for (int i = 1; i <= numOfThreads; ++i) {
         durations = test(numOfThreads, numOfEntries, numOfRecords, &records);
         std::cout << i << "\t\t" << durations[0] << " s\t" << durations[1] << " s\n";
     }
