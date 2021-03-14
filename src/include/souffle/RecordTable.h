@@ -52,7 +52,7 @@ class RecordMap {
 
     /** array of records; index represents record reference */
     // TODO (b-scholz): replace vector<RamDomain> with something more memory-frugal
-    std::vector<std::vector<RamDomain>> indexToRecord;
+    std::vector<const RamDomain*> indexToRecord;
 
 public:
     explicit RecordMap(size_t arity) : arity(arity), indexToRecord(1) {}  // note: index 0 element left free
@@ -69,9 +69,10 @@ public:
             } else {
 #pragma omp critical(record_unpack)
                 {
-                    indexToRecord.push_back(vector);
-                    index = static_cast<RamDomain>(indexToRecord.size()) - 1;
+                    index = static_cast<RamDomain>(indexToRecord.size());
                     recordToIndex[vector] = index;
+                    auto it = recordToIndex.find(vector);
+                    indexToRecord.push_back((&it->first)->data());
 
                     // assert that new index is smaller than the range
                     assert(index != std::numeric_limits<RamDomain>::max());
@@ -101,7 +102,7 @@ public:
     const RamDomain* unpack(RamDomain index) const {
         const RamDomain* res;
 #pragma omp critical(record_unpack)
-        res = indexToRecord[index].data();
+        res = indexToRecord[index];
         return res;
     }
 };
