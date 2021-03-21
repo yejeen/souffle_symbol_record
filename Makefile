@@ -46,7 +46,7 @@ performance-symbol:
 performance-record:
 	@echo "\n********** Test Performance Record Table **********"
 	@$(CC) $(CXXFLAGS) $(PARALLELFLAGS) $(INCLUDES) -o $(TARGET) $(TEST_DIR)/record_table_performance_test.cpp
-	@./$(TARGET) $(NUM_OF_THREADS) $(NUM_OF_ENTRIES) $(RECORD_LENGTH) $(NUM_OF_RECORDS)
+	@./$(TARGET) $(NUM_OF_THREADS) $(NUM_OF_ENTRIES) $(NUM_OF_RECORDS) $(RECORD_LENGTH)
 
 clean:
 	rm -f $(TARGET)
