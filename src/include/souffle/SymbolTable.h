@@ -42,7 +42,7 @@ namespace souffle {
 class SymbolTable {
 private:
     /** A lock to synchronize parallel accesses */
-    mutable Lock access;
+    mutable ReadWriteLock access;
 
     /** Map indices to string pointers. */
     std::vector<const std::string*> numToStr;
@@ -54,14 +54,19 @@ private:
      * it. */
     inline size_t newSymbolOfIndex(const std::string& symbol) {
         size_t index;
+        access.start_read();
         auto it = strToNum.find(symbol);
         if (it == strToNum.end()) {
+            access.end_read();
+            access.start_write();
             index = numToStr.size();
             strToNum[symbol] = index;
             it = strToNum.find(symbol);
             numToStr.push_back(&it->first);
+            access.end_write();
         } else {
             index = it->second;
+            access.end_read();
         }
         return index;
     }
@@ -127,8 +132,6 @@ public:
      * already. */
     RamDomain lookup(const std::string& symbol) {
         {
-            auto lease = access.acquire();
-            (void)lease;  // avoid warning;
             return static_cast<RamDomain>(newSymbolOfIndex(symbol));
         }
     }
@@ -136,9 +139,9 @@ public:
     /** Finds the index of a symbol in the table, giving an error if it's not found */
     RamDomain lookupExisting(const std::string& symbol) const {
         {
-            auto lease = access.acquire();
-            (void)lease;  // avoid warning;
+            access.start_read();
             auto result = strToNum.find(symbol);
+            access.end_read();
             if (result == strToNum.end()) {
                 fatal("Error string not found in call to `SymbolTable::lookupExisting`: `%s`", symbol);
             }
@@ -157,14 +160,15 @@ public:
      */
     const std::string& resolve(const RamDomain index) const {
         {
-            auto lease = access.acquire();
-            (void)lease;  // avoid warning;
+            access.start_read();
             auto pos = static_cast<size_t>(index);
             if (pos >= size()) {
                 // TODO: use different error reporting here!!
                 fatal("Error index out of bounds in call to `SymbolTable::resolve`. index = `%d`", index);
             }
-            return *numToStr[pos];
+            auto result = numToStr[pos];
+            access.end_read();
+            return *result;
         }
     }
 
@@ -182,12 +186,12 @@ public:
      * of single symbols. */
     void insert(const std::vector<std::string>& symbols) {
         {
-            auto lease = access.acquire();
-            (void)lease;  // avoid warning;
+            access.start_write();
             strToNum.reserve(size() + symbols.size());
             for (auto& symbol : symbols) {
                 newSymbol(symbol);
             }
+            access.end_write();
         }
     }
 
@@ -196,9 +200,9 @@ public:
      * in bulk. */
     void insert(const std::string& symbol) {
         {
-            auto lease = access.acquire();
-            (void)lease;  // avoid warning;
+            access.start_write();
             newSymbol(symbol);
+            access.end_write();
         }
     }
 
@@ -217,10 +221,11 @@ public:
 
     /** Check if the symbol table contains a string */
     bool contains(const std::string& symbol) const {
-        auto lease = access.acquire();
-        (void)lease;  // avoid warning;
+        access.start_read();
         auto result = strToNum.find(symbol);
-        if (result == strToNum.end()) {
+        auto length = strToNum.end();
+        access.end_read();
+        if (result == length) {
             return false;
         } else {
             return true;
@@ -229,18 +234,15 @@ public:
 
     /** Check if the symbol table contains an index */
     bool contains(const RamDomain index) const {
-        auto lease = access.acquire();
-        (void)lease;  // avoid warning;
         auto pos = static_cast<size_t>(index);
-        if (pos >= size()) {
+        access.start_read();
+        auto result = size();
+        access.end_read();
+        if (pos >= result) {
             return false;
         } else {
             return true;
         }
-    }
-
-    Lock::Lease acquireLock() const {
-        return access.acquire();
     }
 
     /** Stream operator, used as a convenience for print. */
