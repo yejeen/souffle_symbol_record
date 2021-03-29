@@ -52,7 +52,7 @@ private:
 
     /** Convenience method to place a new symbol in the table, if it does not exist, and return the index of
      * it. */
-    inline size_t n(const std::string& symbol) {
+    inline size_t newSymbolOfIndex(const std::string& symbol) {
         size_t index;
         auto it = strToNum.find(symbol);
         if (it == strToNum.end()) {
