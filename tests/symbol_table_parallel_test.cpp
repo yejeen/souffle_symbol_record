@@ -46,19 +46,23 @@ TEST(SymbolTable, Basics) {
 
 TEST(SymbolTable, Basics_DifferentInputs) {
     SymbolTable table;
-    const int N = 10;
+    const int N = 100;
+
+    for (int i = 0; i < N; i++) {
+        table.lookup("Hello" + std::to_string(i));
+    }
 
 #pragma omp parallel for num_threads(4)
     for (int i = 0; i < N; i++) {
+        const std::string str = "Hello" + std::to_string(i);
+        EXPECT_STREQ(str, table.resolve(table.lookup(table.resolve(table.lookup(str)))));
 
-        EXPECT_STREQ("Hello" + i, table.resolve(table.lookup(table.resolve(table.lookup("Hello" + i)))));
+        EXPECT_EQ(table.lookup(str), table.lookup(table.resolve(table.lookup(str))));
 
-        EXPECT_EQ(table.lookup("Hello" + i), table.lookup(table.resolve(table.lookup("Hello" + i))));
+        EXPECT_STREQ(str, table.resolve(table.lookup(table.resolve(table.lookup(str)))));
 
-        EXPECT_STREQ("Hello" + i, table.resolve(table.lookup(table.resolve(table.lookup("Hello" + i)))));
-
-        EXPECT_EQ(table.lookup("Hello" + i),
-            table.lookup(table.resolve(table.lookup(table.resolve(table.lookup("Hello" + i))))));
+        EXPECT_EQ(table.lookup(str),
+            table.lookup(table.resolve(table.lookup(table.resolve(table.lookup(str))))));
     }
 }
 
