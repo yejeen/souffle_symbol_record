@@ -75,8 +75,6 @@ private:
 
     /** Convenience method to place a new symbol in the table, if it does not exist. */
     inline void newSymbol(const std::string& symbol) {
-        auto lock = access.acquire();
-        (void)lock;  // avoid warning;
         if (strToNum.find(symbol) == strToNum.end()) {
             strToNum[symbol] = numToStr.size();
             auto it = strToNum.find(symbol);
