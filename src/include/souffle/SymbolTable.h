@@ -29,6 +29,8 @@
 #include <unordered_map>
 #include <utility>
 #include <vector>
+#include <tbb/concurrent_vector.h>
+#include <tbb/concurrent_hash_map.h>
 
 namespace souffle {
 
@@ -45,30 +47,29 @@ private:
     mutable Lock access;
 
     /** Map indices to string pointers. */
-    std::vector<const std::string*> numToStr;
+    tbb::concurrent_vector<const std::string*> numToStr;
 
     /** Map strings to indices. */
-    std::unordered_map<std::string, size_t> strToNum;
+    tbb::concurrent_hash_map<std::string, size_t> strToNum;
 
     /** Convenience method to place a new symbol in the table, if it does not exist, and return the index of
      * it; otherwise return the index */
     inline size_t newSymbolOfIndex(const std::string& symbol) {
+        tbb::concurrent_hash_map<std::string, size_t>::accessor accessor;
         size_t index;
-        auto it = strToNum.find(symbol);
-        if (it == strToNum.end()) {
+        if(strToNum.find(accessor, symbol)) {
+            index = accessor->second;
+        } else {
             access.lock();
-            it = strToNum.find(symbol);
-            if(it == strToNum.end()) { // check if the symbol is added by other threads before getting lock.
-                index = numToStr.size();
-                strToNum[symbol] = index;
-                it = strToNum.find(symbol);
-                numToStr.push_back(&it->first);
+            if(strToNum.find(accessor, symbol)) {
+                index = accessor->second;
             } else {
-                index = it->second;
+                index = numToStr.size();
+                strToNum.insert(accessor, symbol);
+                accessor->second = index;
+                numToStr.push_back(&accessor->first);
             }
             access.unlock();
-        } else {
-            index = it->second;
         }
         return index;
     }
@@ -77,11 +78,11 @@ public:
     SymbolTable() = default;
 
     SymbolTable(std::initializer_list<std::string> symbols) {
-        strToNum.reserve(symbols.size());
+        tbb::concurrent_hash_map<std::string, size_t>::accessor accessor;
         for (const auto& symbol : symbols) {
-            strToNum[symbol] = numToStr.size();
-            auto it = strToNum.find(symbol);
-            numToStr.push_back(&it->first);
+            strToNum.insert(accessor, symbol);
+            accessor->second = numToStr.size();
+            numToStr.push_back(&accessor->first);
         }
     }
 

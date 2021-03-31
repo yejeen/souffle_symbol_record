@@ -3,11 +3,15 @@ CC = g++ -std=c++17
 
 CXXFLAGS = -Wall
 
-PARALLELFLAGS = -fopenmp
+PARALLELFLAGS = -Xpreprocessor -fopenmp
 
 TEST_DIR = ./tests
 
 INCLUDES = -Isrc/include/ -I./
+
+LIBTBB = -ltbb
+
+LIBOMP = -lomp
 
 TARGET = run_test
 
@@ -25,7 +29,7 @@ check: symbol record clean
 
 symbol:
 	@echo "\n********** Test Symbol Table **********"
-	@$(CC) $(CXXFLAGS) $(INCLUDES) -o $(TARGET) $(TEST_DIR)/symbol_table_test.cpp
+	@$(CC) $(CXXFLAGS) $(INCLUDES) -o $(TARGET) $(TEST_DIR)/symbol_table_test.cpp $(LIBTBB)
 	@./$(TARGET)
 
 record:
@@ -35,12 +39,12 @@ record:
 
 parallel-symbol:
 	@echo "\n********** Test Parallel Symbol Table **********"
-	@$(CC) $(CXXFLAGS) $(PARALLELFLAGS) $(INCLUDES) -o $(TARGET) $(TEST_DIR)/symbol_table_parallel_test.cpp
+	@$(CC) $(CXXFLAGS) $(PARALLELFLAGS) $(INCLUDES) -o $(TARGET) $(TEST_DIR)/symbol_table_parallel_test.cpp $(LIBTBB) $(LIBOMP)
 	@./$(TARGET)
 
 performance-symbol:
 	@echo "\n********** Test Performance Symbol Table **********"
-	@$(CC) $(CXXFLAGS) $(PARALLELFLAGS) $(INCLUDES) -o $(TARGET) $(TEST_DIR)/symbol_table_performance_test.cpp
+	@$(CC) $(CXXFLAGS) $(PARALLELFLAGS) $(INCLUDES) -o $(TARGET) $(TEST_DIR)/symbol_table_performance_test.cpp $(LIBTBB) $(LIBOMP)
 	@./$(TARGET) $(NUM_OF_THREADS) $(STRING_LENGTH) $(FILE_PATH)
 
 performance-record:
