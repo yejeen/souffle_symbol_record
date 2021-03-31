@@ -32,7 +32,6 @@ TEST(SymbolTable, Basics) {
 
 #pragma omp parallel for num_threads(4)
     for (int i = 0; i < N; i++) {
-        table.insert("Hello");
 
         EXPECT_STREQ("Hello", table.resolve(table.lookup(table.resolve(table.lookup("Hello")))));
 
@@ -51,7 +50,6 @@ TEST(SymbolTable, Basics_DifferentInputs) {
 
 #pragma omp parallel for num_threads(4)
     for (int i = 0; i < N; i++) {
-        table.insert("Hello" + i);
 
         EXPECT_STREQ("Hello" + i, table.resolve(table.lookup(table.resolve(table.lookup("Hello" + i)))));
 
