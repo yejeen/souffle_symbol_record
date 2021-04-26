@@ -11,6 +11,7 @@
 #include "souffle/RecordTable.h"
 #include <cmath>
 #include <chrono>
+#include <array>
 
 std::array<double,2> test(int numOfThreads, int numOfEntries, int numOfRecords,
             std::vector<std::vector<souffle::RamDomain>> *records);
