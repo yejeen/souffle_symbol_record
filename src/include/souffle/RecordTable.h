@@ -26,6 +26,8 @@
 #include <unordered_map>
 #include <utility>
 #include <vector>
+#include <tbb/concurrent_vector.h>
+#include <tbb/concurrent_hash_map.h>
 
 namespace souffle {
 
@@ -36,7 +38,7 @@ class RecordMap {
 
     /** hash function for unordered record map */
     struct RecordHash {
-        std::size_t operator()(std::vector<RamDomain> record) const {
+        static size_t hash( const std::vector<RamDomain>& record ) {
             std::size_t seed = 0;
             std::hash<RamDomain> domainHash;
             for (RamDomain value : record) {
@@ -44,15 +46,16 @@ class RecordMap {
             }
             return seed;
         }
+        static bool equal( const std::vector<RamDomain>& a, const std::vector<RamDomain>& b ) {
+            return a==b;
+        }
     };
 
     /** map from records to references */
-    // TODO (b-scholz): replace vector<RamDomain> with something more memory-frugal
-    std::unordered_map<std::vector<RamDomain>, RamDomain, RecordHash> recordToIndex;
+    tbb::concurrent_hash_map<std::vector<RamDomain>, RamDomain, RecordHash> recordToIndex;
 
     /** array of records; index represents record reference */
-    // TODO (b-scholz): replace vector<RamDomain> with something more memory-frugal
-    std::vector<const RamDomain*> indexToRecord;
+    tbb::concurrent_vector<const RamDomain*> indexToRecord;
 
 public:
     explicit RecordMap(size_t arity) : arity(arity), indexToRecord(1) {}  // note: index 0 element left free
@@ -60,24 +63,18 @@ public:
     /** @brief converts record to a record reference */
     // TODO (b-scholz): replace vector<RamDomain> with something more memory-frugal
     RamDomain pack(const std::vector<RamDomain>& vector) {
+        tbb::concurrent_hash_map<std::vector<RamDomain>, RamDomain, RecordHash>::accessor accessor;
         RamDomain index;
-#pragma omp critical(record_pack)
-        {
-            auto pos = recordToIndex.find(vector);
-            if (pos != recordToIndex.end()) {
-                index = pos->second;
-            } else {
-#pragma omp critical(record_unpack)
-                {
-                    index = static_cast<RamDomain>(indexToRecord.size());
-                    recordToIndex[vector] = index;
-                    auto it = recordToIndex.find(vector);
-                    indexToRecord.push_back((&it->first)->data());
+        if (recordToIndex.find(accessor, vector)) {
+            index = accessor->second;
+        } else {
+            index = static_cast<RamDomain>(indexToRecord.size());
+            recordToIndex.insert(accessor, vector);
+            accessor->second = index;
+            indexToRecord.push_back((&accessor->first)->data());
 
-                    // assert that new index is smaller than the range
-                    assert(index != std::numeric_limits<RamDomain>::max());
-                }
-            }
+            // assert that new index is smaller than the range
+            assert(index != std::numeric_limits<RamDomain>::max());
         }
         return index;
     }
@@ -101,7 +98,6 @@ public:
     /** @brief convert record reference to a record pointer */
     const RamDomain* unpack(RamDomain index) const {
         const RamDomain* res;
-#pragma omp critical(record_unpack)
         res = indexToRecord[index];
         return res;
     }
@@ -118,30 +114,27 @@ public:
     }
     /** @brief convert record reference to a record */
     const RamDomain* unpack(RamDomain ref, size_t arity) const {
-        std::unordered_map<size_t, RecordMap>::const_iterator iter;
-#pragma omp critical(RecordTableGetForArity)
-        {
-            // Find a previously emplaced map
-            iter = maps.find(arity);
-        }
-        assert(iter != maps.end() && "Attempting to unpack record for non-existing arity");
-        return (iter->second).unpack(ref);
+        tbb::concurrent_hash_map<size_t, RecordMap>::const_accessor accessor;
+
+        bool result = maps.find(accessor, arity);
+        assert(result && "Attempting to unpack record for non-existing arity");
+
+        return (accessor->second).unpack(ref);
     }
 
 private:
     /** @brief lookup RecordMap for a given arity; if it does not exist, create new RecordMap */
     RecordMap& lookupArity(size_t arity) {
-        std::unordered_map<size_t, RecordMap>::iterator mapsIterator;
-#pragma omp critical(RecordTableGetForArity)
-        {
-            // This will create a new map if it doesn't exist yet.
-            mapsIterator = maps.emplace(arity, arity).first;
-        }
-        return mapsIterator->second;
+        tbb::concurrent_hash_map<size_t, RecordMap>::accessor accessor;
+
+        // This will create a new map if it doesn't exist yet.
+        maps.emplace(accessor, arity, arity);
+
+        return accessor->second;
     }
 
     /** Arity/RecordMap association */
-    std::unordered_map<size_t, RecordMap> maps;
+    tbb::concurrent_hash_map<size_t, RecordMap> maps;
 };
 
 /** @brief helper to convert tuple to record reference for the synthesiser */
