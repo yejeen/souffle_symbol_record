@@ -34,12 +34,17 @@ symbol:
 
 record:
 	@echo "\n********** Test Record Table **********"
-	@$(CC) $(CXXFLAGS) $(INCLUDES) -o $(TARGET) $(TEST_DIR)/record_table_test.cpp
+	@$(CC) $(CXXFLAGS) $(INCLUDES) -o $(TARGET) $(TEST_DIR)/record_table_test.cpp $(LIBTBB)
 	@./$(TARGET)
 
 parallel-symbol:
 	@echo "\n********** Test Parallel Symbol Table **********"
 	@$(CC) $(CXXFLAGS) $(PARALLELFLAGS) $(INCLUDES) -o $(TARGET) $(TEST_DIR)/symbol_table_parallel_test.cpp $(LIBTBB) $(LIBOMP)
+	@./$(TARGET)
+
+parallel-record:
+	@echo "\n********** Test Parallel Record Table **********"
+	@$(CC) $(CXXFLAGS) $(PARALLELFLAGS) $(INCLUDES) -o $(TARGET) $(TEST_DIR)/record_table_parallel_test.cpp $(LIBTBB) $(LIBOMP)
 	@./$(TARGET)
 
 performance-symbol:
@@ -49,7 +54,7 @@ performance-symbol:
 
 performance-record:
 	@echo "\n********** Test Performance Record Table **********"
-	@$(CC) $(CXXFLAGS) $(PARALLELFLAGS) $(INCLUDES) -o $(TARGET) $(TEST_DIR)/record_table_performance_test.cpp
+	@$(CC) $(CXXFLAGS) $(PARALLELFLAGS) $(INCLUDES) -o $(TARGET) $(TEST_DIR)/record_table_performance_test.cpp $(LIBTBB) $(LIBOMP)
 	@./$(TARGET) $(NUM_OF_THREADS) $(NUM_OF_ENTRIES) $(NUM_OF_RECORDS) $(RECORD_LENGTH)
 
 clean:
